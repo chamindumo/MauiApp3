@@ -6,36 +6,40 @@
 
 <h1>Call JS Example 8</h1>
 
-<div @ref="mapElement" style='width:400px;height:300px'></div>
+<div @ref="mapElement" style='width:900px;height:500px'></div>
 
-<button @onclick="() => ShowAsync(51.454514, -2.587910)">Show Bristol, UK</button>
-<button @onclick="() => ShowAsync(35.6762, 139.6503)">Show Tokyo, Japan</button>
+<button @onclick="GetCurrentLocationAsync">Show Current Location</button>
+<button @onclick="ShareLocationAsync">Share Location</button>
+<button @onclick="AddStoredLocations">Add Stored Locations</button>
+<button @onclick="DisplayDirections">Display Directions</button>
+
+
 
 @code
 {
     private ElementReference mapElement;
     private IJSObjectReference? mapModule;
     private IJSObjectReference? mapInstance;
-
-    protected override async Task OnAfterRenderAsync(bool firstRender)
+    private double storedLatitude1 = 6.843276; // Replace with your stored latitude value
+    private double storedLongitude1 = 80.003183; // Replace with your stored longitude value
+    private double storedLatitude2 = 6.4134;
+    private double storedLongitude2 = 81.3346;
+    public class GeolocationCoordinates
     {
-        if (firstRender)
-        {
-            mapModule = await JS.InvokeAsync<IJSObjectReference>(
-                "import", "./mapComponent.js");
-            mapInstance = await mapModule.InvokeAsync<IJSObjectReference>(
-                "addMapToElement", mapElement);
-        }
+        public double Latitude { get; set; }
+        public double Longitude { get; set; }
     }
 
-    private async Task ShowAsync(double latitude, double longitude)
+ protected override async Task OnAfterRenderAsync(bool firstRender)
+{
+    if (firstRender)
     {
-        if (mapModule is not null && mapInstance is not null)
-        {
-            await mapModule.InvokeVoidAsync("setMapCenter", mapInstance,
-                latitude, longitude).AsTask();
-        }
+        mapModule = await JS.InvokeAsync<IJSObjectReference>("import", "./mapComponent.js");
+        mapInstance = await mapModule.InvokeAsync<IJSObjectReference>("addMapToElement", mapElement);
     }
+}
+
+   
 
     async ValueTask IAsyncDisposable.DisposeAsync()
     {
@@ -49,4 +53,52 @@
             await mapModule.DisposeAsync();
         }
     }
+
+    private async Task GetCurrentLocationAsync()
+    {
+        if (mapModule is not null && mapInstance is not null)
+        {
+            var position = await JS.InvokeAsync<GeolocationCoordinates>("getCurrentLocation");
+
+            await mapModule.InvokeVoidAsync("setMapCenter", mapInstance, position.Latitude, position.Longitude);
+
+            // Set the start location for the Mapbox Directions plugin
+            await mapModule.InvokeVoidAsync("setDirectionsStart", mapInstance, position.Latitude, position.Longitude);
+
+            await AddPointAsync(position.Latitude, position.Longitude);
+
+            await JS.InvokeVoidAsync("shareLocation");
+        }
+    }
+    private async Task ShareLocationAsync()
+    {
+        await GetCurrentLocationAsync();
+    }
+
+    private async Task AddPointAsync(double latitude, double longitude)
+    {
+        if (mapModule is not null && mapInstance is not null)
+        {
+            var markerElement = await mapModule.InvokeAsync<IJSObjectReference>("addPointToMap", mapInstance, latitude, longitude);
+            // Center the map on the added location
+            await mapModule.InvokeVoidAsync("setMapCenter", mapInstance, latitude, longitude);
+        }
+    }
+
+    private async Task AddStoredLocations()
+    {
+        await mapModule.InvokeVoidAsync("addPointToMap", mapInstance, storedLatitude1, storedLongitude1);
+        await mapModule.InvokeVoidAsync("addPointToMap", mapInstance, storedLatitude2, storedLongitude2);
+        // Add more locations as needed
+    }
+
+
+
+
+    private async Task DisplayDirections()
+    {
+        await AddStoredLocations();
+        await mapModule.InvokeVoidAsync("calculateAndDisplayDirections",mapInstance, storedLatitude1, storedLongitude1, storedLatitude2, storedLongitude2);
+    }
+
 }
