@@ -3,6 +3,11 @@ import 'https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-directions/v4.1.1/
 
 mapboxgl.accessToken = 'pk.eyJ1IjoiamFuaXRocmFtbyIsImEiOiJjbGpkeHYyZ2QwM2o3M2ZtcHgzdHY5M3dkIn0.Hp_k7bdZzNsEKac31qCYZQ';
 
+let searchedEndLatitude = null;
+let searchedEndLongitude = null;
+
+
+
 
 export function addMapToElement(element) {
     const map = new mapboxgl.Map({
@@ -95,8 +100,43 @@ export function calculateAndDisplayDirections(mapInstance, startLatitude, startL
         directionsControl.on('route', function (e) {
             // Handle route data if needed
         });
+
+        // Store the searched values in a dictionary
+        const searchedValues = {
+            startLatitude,
+            startLongitude,
+            endLatitude,
+            endLongitude
+        };
+
+        // Pass the searched values to the Razor page
+        DotNet.invokeMethodAsync('My Application', 'StoreSearchedValues', JSON.stringify(searchedValues));
     }
 }
+
+
+export function calculateAndDisplayDirections2(mapInstance, startLatitude, startLongitude, endLatitude, endLongitude) {
+    const directionsControl = mapInstance._controls.find(control => control instanceof MapboxDirections);
+    if (directionsControl) {
+        directionsControl.setOrigin([startLongitude, startLatitude]);
+        directionsControl.setDestination([endLongitude, endLatitude]);
+        directionsControl.on('route', function (e) {
+            // Handle route data if needed
+        });
+
+        // Store the searched values in a dictionary
+        const searchedValues = {
+            startLatitude,
+            startLongitude,
+            endLatitude,
+            endLongitude
+        };
+
+        // Pass the searched values to the Razor page
+        DotNet.invokeMethodAsync('My Application', 'StoreSearchedValues', JSON.stringify(searchedValues));
+    }
+}
+
 
 
 

@@ -1,10 +1,12 @@
-﻿@page "/"
+﻿@using System.Text.Json
+
+@page "/"
 
 @page "/call-js-example-8"
 @implements IAsyncDisposable
 @inject IJSRuntime JS
 
-<h1>Call JS Example 8</h1>
+<h1>My Application</h1>
 
 <div @ref="mapElement" style='width:900px;height:500px'></div>
 
@@ -12,6 +14,7 @@
 <button @onclick="ShareLocationAsync">Share Location</button>
 <button @onclick="AddStoredLocations">Add Stored Locations</button>
 <button @onclick="DisplayDirections">Display Directions</button>
+<button @onclick="DisplaymyDirections">Display my Directions</button>
 
 
 
@@ -24,22 +27,32 @@
     private double storedLongitude1 = 80.003183; // Replace with your stored longitude value
     private double storedLatitude2 = 6.4134;
     private double storedLongitude2 = 81.3346;
+    private string searchedValues;
+
+
+
+
+    private double storedLatitude3 ; // Replace with your stored latitude value
+    private double storedLongitude3; // Replace with your stored longitude value
+    private double storedLatitude4 = 6.4134;
+    private double storedLongitude4 = 80.003183;
+
     public class GeolocationCoordinates
     {
         public double Latitude { get; set; }
         public double Longitude { get; set; }
     }
 
- protected override async Task OnAfterRenderAsync(bool firstRender)
-{
-    if (firstRender)
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        mapModule = await JS.InvokeAsync<IJSObjectReference>("import", "./mapComponent.js");
-        mapInstance = await mapModule.InvokeAsync<IJSObjectReference>("addMapToElement", mapElement);
+        if (firstRender)
+        {
+            mapModule = await JS.InvokeAsync<IJSObjectReference>("import", "./mapComponent.js");
+            mapInstance = await mapModule.InvokeAsync<IJSObjectReference>("addMapToElement", mapElement);
+        }
     }
-}
 
-   
+
 
     async ValueTask IAsyncDisposable.DisposeAsync()
     {
@@ -68,6 +81,10 @@
             await AddPointAsync(position.Latitude, position.Longitude);
 
             await JS.InvokeVoidAsync("shareLocation");
+
+            storedLatitude3 = position.Latitude;
+            storedLongitude3 = position.Longitude;
+
         }
     }
     private async Task ShareLocationAsync()
@@ -101,4 +118,29 @@
         await mapModule.InvokeVoidAsync("calculateAndDisplayDirections",mapInstance, storedLatitude1, storedLongitude1, storedLatitude2, storedLongitude2);
     }
 
+   
+
+    [JSInvokable]
+    public void StoreSearchedValues(string valuesJson)
+    {
+        var values = JsonSerializer.Deserialize<Dictionary<string, double>>(valuesJson);
+
+        if (values.ContainsKey("startLatitude") && values.ContainsKey("startLongitude") &&
+            values.ContainsKey("endLatitude") && values.ContainsKey("endLongitude"))
+        {
+           
+            storedLatitude4 = values.TryGetValue("endLatitude", out double endLatitude) ? endLatitude : 0;
+            storedLongitude4=values.TryGetValue("endLongitude", out double endLongitude) ? endLongitude : 0; ;
+        }
+    }
+
+    private async Task DisplaymyDirections()
+    {
+        await GetCurrentLocationAsync();
+
+        await mapModule.InvokeVoidAsync("calculateAndDisplayDirections", mapInstance, storedLatitude3, storedLongitude3, storedLatitude4, storedLongitude4);
+    }
+
 }
+
+
