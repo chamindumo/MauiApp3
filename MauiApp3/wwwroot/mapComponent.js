@@ -23,6 +23,55 @@ export function addMapToElement(element) {
     });
 
     map.addControl(directions, 'top-left');
+    map.on('load', () => {
+  // Define the route coordinates or GeoJSON LineString representing the desired route
+  const routeCoordinates = [
+      [79.95832, 6.59760],
+      [81.34281, 6.41551],
+    // Add more coordinates as needed
+  ];
+
+  // Add a GeoJSON source using the route coordinates
+  map.addSource('route', {
+    type: 'geojson',
+    data: {
+      type: 'Feature',
+      properties: {},
+      geometry: {
+        type: 'LineString',
+        coordinates: routeCoordinates,
+      },
+    },
+  });
+
+  // Add a line layer to the map using the GeoJSON source
+  map.addLayer({
+    id: 'route',
+    type: 'line',
+    source: 'route',
+    layout: {
+      'line-join': 'round',
+      'line-cap': 'round',
+    },
+    paint: {
+      'line-color': '#888',
+      'line-width': 8,
+    },
+  });
+
+  // Implement navigation logic and user interactions
+  // This can include things like displaying instructions, handling user interactions, etc.
+  // You can use Mapbox GL JS events and API methods to accomplish this.
+
+  // Example event handler for a map click
+  map.on('click', 'route', (e) => {
+    // Handle click on the route layer
+    // You can access the clicked feature and perform custom actions
+    const clickedFeature = e.features[0];
+    console.log('Clicked feature:', clickedFeature);
+  });
+});
+
 
 
     return map;
