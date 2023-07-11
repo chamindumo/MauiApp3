@@ -6,7 +6,7 @@ mapboxgl.accessToken = 'pk.eyJ1IjoiamFuaXRocmFtbyIsImEiOiJjbGpkeHYyZ2QwM2o3M2Ztc
 let searchedEndLatitude = null;
 let searchedEndLongitude = null;
 
-
+let previousRoutes = [];
 
 
 export function addMapToElement(element) {
@@ -19,9 +19,11 @@ export function addMapToElement(element) {
 
     const directions = new MapboxDirections({
         accessToken: mapboxgl.accessToken,
+
     });
 
     map.addControl(directions, 'top-left');
+
 
     return map;
 }

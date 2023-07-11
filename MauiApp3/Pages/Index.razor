@@ -1,4 +1,6 @@
 ﻿@using System.Text.Json
+@using System.IO;
+
 
 @page "/"
 
@@ -10,12 +12,11 @@
 
 <div @ref="mapElement" style='width:900px;height:500px'></div>
 
-<button @onclick="GetCurrentLocationAsync">Show Current Location</button>
-<button @onclick="ShareLocationAsync">Share Location</button>
+<input type="text" @bind="userId" placeholder="Enter User ID" />
 <button @onclick="AddStoredLocations">Add Stored Locations</button>
 <button @onclick="DisplayDirections">Display Directions</button>
 <button @onclick="DisplaymyDirections">Display my Directions</button>
-
+<button @onclick="newLocation">Submit</button>
 
 
 @code
@@ -23,19 +24,23 @@
     private ElementReference mapElement;
     private IJSObjectReference? mapModule;
     private IJSObjectReference? mapInstance;
-    private double storedLatitude1 = 6.843276; // Replace with your stored latitude value
-    private double storedLongitude1 = 80.003183; // Replace with your stored longitude value
-    private double storedLatitude2 = 6.4134;
-    private double storedLongitude2 = 81.3346;
-    private string searchedValues;
+    private double storedLatitude1 ; // Replace with your stored latitude value
+    private double storedLongitude1; // Replace with your stored longitude value
+    private double storedLatitude2 ;
+    private double storedLongitude2;
+    private double storedLatitude9; // Replace with your stored latitude value
+    private double storedLongitude9;
 
 
 
 
-    private double storedLatitude3 ; // Replace with your stored latitude value
-    private double storedLongitude3; // Replace with your stored longitude value
+    private double storedLatitude3 ; 
+    private double storedLongitude3;
     private double storedLatitude4 = 6.4134;
     private double storedLongitude4 = 80.003183;
+    private int Id = 1;
+    private string userId = "";
+
 
     public class GeolocationCoordinates
     {
@@ -87,10 +92,7 @@
 
         }
     }
-    private async Task ShareLocationAsync()
-    {
-        await GetCurrentLocationAsync();
-    }
+
 
     private async Task AddPointAsync(double latitude, double longitude)
     {
@@ -118,28 +120,73 @@
         await mapModule.InvokeVoidAsync("calculateAndDisplayDirections",mapInstance, storedLatitude1, storedLongitude1, storedLatitude2, storedLongitude2);
     }
 
-   
 
-    [JSInvokable]
-    public void StoreSearchedValues(string valuesJson)
+
+
+    private async Task WriteToFileAsync(string text)
     {
-        var values = JsonSerializer.Deserialize<Dictionary<string, double>>(valuesJson);
+        string filePath = "C:/Users/Chamindu/Source/Repos/Applicatio/MauiApp3/values.txt";
+        await File.WriteAllTextAsync(filePath, text);
+    }
 
-        if (values.ContainsKey("startLatitude") && values.ContainsKey("startLongitude") &&
-            values.ContainsKey("endLatitude") && values.ContainsKey("endLongitude"))
-        {
-           
-            storedLatitude4 = values.TryGetValue("endLatitude", out double endLatitude) ? endLatitude : 0;
-            storedLongitude4=values.TryGetValue("endLongitude", out double endLongitude) ? endLongitude : 0; ;
-        }
+
+
+    private async Task AppendToFileAsync(string text)
+    {
+        string filePath = "C:/Users/Chamindu/Source/Repos/Applicatio/MauiApp3/values.txt";
+        await File.AppendAllTextAsync(filePath, text + Environment.NewLine);
     }
 
     private async Task DisplaymyDirections()
     {
+        Id = Id + 1;
         await GetCurrentLocationAsync();
 
         await mapModule.InvokeVoidAsync("calculateAndDisplayDirections", mapInstance, storedLatitude3, storedLongitude3, storedLatitude4, storedLongitude4);
+
+        // Construct the values as a single line
+        string valuesText = $"ID: {Id}, Start Latitude: {storedLatitude3}, Start Longitude: {storedLongitude3}, End Latitude: {storedLatitude4}, End Longitude: {storedLongitude4}";
+
+        // Append the values as a new line in the text file
+        await AppendToFileAsync(valuesText);
     }
+
+
+    private async Task newLocation()
+    {
+        if (!string.IsNullOrWhiteSpace(userId))
+        {
+            // Read the values from the text file
+            string filePath = "C:/Users/Chamindu/Source/Repos/Applicatio/MauiApp3/newData.txt";
+            string[] lines = await File.ReadAllLinesAsync(filePath);
+
+            foreach (var line in lines)
+            {
+                string[] values = line.Split(',');
+
+                // Check if the ID matches the given user ID
+                if (values.Length >= 5 && values[0].Trim() == $"ID: {userId}")
+                {
+                    if (double.TryParse(values[1].Substring(values[1].IndexOf(":") + 1).Trim(), out double parsedStartLatitude))
+                        storedLatitude1 = parsedStartLatitude;
+
+                    if (double.TryParse(values[2].Substring(values[2].IndexOf(":") + 1).Trim(), out double parsedStartLongitude))
+                        storedLongitude1 = parsedStartLongitude;
+
+                    if (double.TryParse(values[3].Substring(values[3].IndexOf(":") + 1).Trim(), out double parsedEndLatitude))
+                        storedLatitude2 = parsedEndLatitude;
+
+                    if (double.TryParse(values[4].Substring(values[4].IndexOf(":") + 1).Trim(), out double parsedEndLongitude))
+                        storedLongitude2 = parsedEndLongitude;
+
+                    break; // Found the matching ID, no need to continue iterating
+                }
+            }
+        }
+    }
+
+
+
 
 }
 
