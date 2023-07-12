@@ -138,8 +138,12 @@
 
     private async Task DisplaymyDirections()
     {
+        var routeData = await JS.InvokeAsync<string>("JSON.stringify", mapModule, mapInstance);
+
         Id = Id + 1;
         await GetCurrentLocationAsync();
+
+        await AddStoredLocations();
 
         await mapModule.InvokeVoidAsync("calculateAndDisplayDirections", mapInstance, storedLatitude3, storedLongitude3, storedLatitude4, storedLongitude4);
 
@@ -149,6 +153,9 @@
         // Append the values as a new line in the text file
         await AppendToFileAsync(valuesText);
     }
+
+   
+
 
 
     private async Task newLocation()

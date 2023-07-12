@@ -7,7 +7,10 @@ let searchedEndLatitude = null;
 let searchedEndLongitude = null;
 
 let previousRoutes = [];
-
+const routeCoordinates = [
+    
+    // Add more coordinates as needed
+  ];
 
 export function addMapToElement(element) {
     const map = new mapboxgl.Map({
@@ -23,13 +26,10 @@ export function addMapToElement(element) {
     });
 
     map.addControl(directions, 'top-left');
+
     map.on('load', () => {
   // Define the route coordinates or GeoJSON LineString representing the desired route
-  const routeCoordinates = [
-      [79.95832, 6.59760],
-      [81.34281, 6.41551],
-    // Add more coordinates as needed
-  ];
+  
 
   // Add a GeoJSON source using the route coordinates
   map.addSource('route', {
@@ -76,6 +76,13 @@ export function addMapToElement(element) {
 
     return map;
 }
+
+function addCoordinateToRoute() {
+    routeCoordinates.push([82.12345, 6.78901]);
+    routeCoordinates.push([83.45678, 6.54321]);
+}
+
+// Example usage: add a coordinate to the routeCoordinates array
 
 
 export function setMapCenter(map, latitude, longitude) {
@@ -145,6 +152,8 @@ export function clearDirections(mapInstance) {
 
 export function calculateAndDisplayDirections(mapInstance, startLatitude, startLongitude, endLatitude, endLongitude) {
     const directionsControl = mapInstance._controls.find(control => control instanceof MapboxDirections);
+    addCoordinateToRoute();
+
     if (directionsControl) {
         directionsControl.setOrigin([startLongitude, startLatitude]);
         directionsControl.setDestination([endLongitude, endLatitude]);
